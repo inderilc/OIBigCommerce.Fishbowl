@@ -8,8 +8,11 @@ using FishbowlSDK;
 using Dapper;
 
 using BigCommerce.Fishbowl.Configuration;
+using BigCommerce.Fishbowl.Models;
+using BigCommerce.Fishbowl.Extensions;
 
 namespace BigCommerce.Fishbowl.Controller
+
 {
     public class FishbowlController : IDisposable
     {
@@ -54,12 +57,13 @@ namespace BigCommerce.Fishbowl.Controller
             return db.Query<String>("select num from product").ToList();
         }
 
-        public bool CheckSoExists(string eBayOrderID)
+        public bool CheckSoExists(string OrderID)
         {
 
             String so =
-                db.Query<String>("select first 1 c.ID from CUSTOMVARCHARLONG c join customfield f  on c.CUSTOMFIELDID=f.ID where (f.tableid = 1012013120 and f.name = 'Ebay Record No' and c.INFO=@cpo)", new { cpo = eBayOrderID })
+                db.Query<String>("select first 1 num from so where customerpo = @cpo", new { cpo = OrderID })
                     .SingleOrDefault();
+
             return !(string.IsNullOrEmpty(so));
         }
 
@@ -112,8 +116,62 @@ namespace BigCommerce.Fishbowl.Controller
                 return $"Payment NOT Applied. [user id:{userName}]. {rs.statusMessage}";
             }
         }
+        public void CreateCustomer(Customer customer)
+        {
+            api.SaveCustomer(customer, true);
+        }
 
+        public object LoadCustomer(string customerName)
+        {
+            return api.GetCustomer(customerName);
+        }
+        public string FindCustomerNameByEmail(object email)
+        {
+            return db.Query<String>("select first 1 customer.name from CONTACT join customer on customer.accountid = contact.ACCOUNTID where contact.DATUS = @eml and contact.typeid = 60", new { eml = email }).SingleOrDefault();
+        }
+        public bool CustomerExists(object customerName)
+        {
+            var text = db.Query<String>("select name from customer where name = @c", new { c = customerName }).SingleOrDefault();
+            return customerName.Equals(text);
+        }
 
+        public CountryAndState GetCountryState(string Country, string State)
+        {
+            CountryAndState cas = new CountryAndState();
+
+            Countryconst ct;
+            Stateconst st;
+
+            /// Get the country
+            ct = db.Query<Countryconst>("select first 1 * from countryconst where UPPER(abbreviation) containing UPPER(@abb) or UPPER(name) containing UPPER(@n) ", new { n = Country, abb = Country.Truncate(10) }).FirstOrDefault();
+
+            // If we have no country, lookup just by state
+            if (ct == null || ct.ID == null)
+            {
+                st = db.Query<Stateconst>("select first 1 * from stateconst where UPPER(name) containing UPPER(@st) or UPPER(code) containing UPPER(@abb)  ", new { st = State, abb = State.Truncate(21) }).FirstOrDefault();
+            }
+            else // If we have a country, include that in the lookup
+            {
+                st = db.Query<Stateconst>("select first 1 * from stateconst where UPPER(name) containing UPPER(@st) or UPPER(code) containing UPPER(@abb) and countryconstid = @cid ", new { st = State, abb = State.Truncate(21), cid = ct.ID }).FirstOrDefault();
+            }
+
+            // If we have a state and no country
+            if (st != null && ct == null)
+            {
+                // Lookup the country
+                ct = db.Query<Countryconst>("select first 1 * from countryconst where id = @cid", new { cid = st.COUNTRYCONSTID }).FirstOrDefault();
+            }
+
+            if (st == null || ct == null)
+            {
+                throw new Exception("Cant find Country and Or State. [" + Country + "] [" + State + "] ");
+            }
+
+            cas.State = st;
+            cas.Country = ct;
+
+            return cas;
+        }
 
         public void Dispose()
         {

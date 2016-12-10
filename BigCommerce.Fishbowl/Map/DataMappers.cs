@@ -55,7 +55,7 @@ namespace BigCommerce.Fishbowl.Map
             ShippingCost = (double) o.ShippingCostExcludingTax;
     
 
-            salesOrder.Items.Add(AddShipping(MapCarrier(cfg, o.Shipments.ElementAt(0).ShippingMethod.ToString()), "Shipping", Math.Round(ShippingCost, 2), salesOrder.Items.First()));
+            salesOrder.Items.Add(AddShipping(MapCarrier(cfg, salesOrder.Carrier), "Shipping", Math.Round(ShippingCost, 2), salesOrder.Items.First()));
 
 
 
@@ -113,7 +113,6 @@ namespace BigCommerce.Fishbowl.Map
 
         private static SalesOrderItem MapSOItem(Config cfg, OrdersProduct item)
         {
-            //var info = p.extra_data.DeserializePHP();
 
             // Add GST 
             //if (item.Taxes)
@@ -152,39 +151,16 @@ namespace BigCommerce.Fishbowl.Map
             };
         }
 
-
-
-
-
-
         private static List<CustomField> MapCustomFields(Config cfg, BCFBOrder ord)
         {
             List<CustomField> ret = new List<CustomField>();
-            /*
-            //Info = ord.eBayOrder.TransactionArray.ItemAt(0).TransactionID.ToString()
-            ret.Add(new CustomField()
-            {
-                Name = "Ebay Record No",
-                Type = "CFT_LONG_TEXT",
-                Info = ord.BCOrder.OrderID.ToString()
-            });
 
             ret.Add(new CustomField()
             {
-                Name = "Requested Shipping",
+                Name = "Misc Credit",
                 Type = "CFT_LONG_TEXT",
-                Info = MapCarrier(cfg, ord.BCOrder.ShippingServiceSelected.ShippingService)
+                Info = ord.BCOrder.StoreCreditAmount.ToString()
             });
-
-            ret.Add(new CustomField()
-            {
-                Name = "Delivery Instructions:",
-                Type = "CFT_LONG_TEXT",
-                Info = ord.eBayOrder?.BuyerCheckoutMessage ?? ""
-            });
-            */
-
-
 
             return ret;
         }
@@ -208,10 +184,7 @@ namespace BigCommerce.Fishbowl.Map
 
         private static SalesOrderItem AddShipping(string shipcode, string desc, Double shippingAmount, SalesOrderItem FirstLine)
         {
-
-
-
-
+           
             //shippingAmount = Math.Round(shippingAmount * 1.1, 2);
 
             return new SalesOrderItem()
@@ -253,6 +226,65 @@ namespace BigCommerce.Fishbowl.Map
         {           
             return StringExtensions.Coalesce(cfg?.Store?.OrderSettings?.DefaultCustomer, o.Customer?.FirstName+" "+o.Customer?.LastName, o.BillingAddress?.FirstName+" " + o.BillingAddress?.LastName).Trim();
         }
-    }
 
+        public static FishbowlSDK.Customer MapCustomer(Config cfg, Order o, String customerName, CountryAndState csa)
+        {
+            FishbowlSDK.Customer customer = new FishbowlSDK.Customer();
+            customer.CustomerID = "-1";
+            customer.Status = "Normal";
+            //customer.DefPaymentTerms = cfg.Store.OrderSettings.PaymentTerms;
+            customer.TaxRate = null;
+            customer.Name = customerName;
+            customer.LastChangedUser = cfg.Store.OrderSettings.Salesman;
+            customer.CreditLimit = "0";
+            customer.TaxExempt = false;
+            customer.TaxExemptNumber = null;
+            customer.TaxExemptSpecified = true;
+            customer.ActiveFlag = true;
+            customer.ActiveFlagSpecified = true;
+            customer.AccountingID = null;
+            customer.DefaultSalesman = cfg.Store.OrderSettings.Salesman;
+            customer.DefaultCarrier = cfg.Store.OrderSettings.DefaultCarrier;
+
+            customer.JobDepth = "1";
+            FishbowlSDK.Address address = new FishbowlSDK.Address();
+            address.Street = o.BillingAddress.Street1+" "+ o.BillingAddress.Street2;
+
+            address.Name = o.BillingAddress.FirstName + " " + o.BillingAddress.LastName;
+
+            address.Attn = address.Name;
+
+            address.Residential = true;
+            address.ResidentialSpecified = true;
+
+            address.State.Code = csa.State.CODE;
+            address.State.Name = csa.State.NAME;
+
+            address.Country.Name = csa.Country.NAME;
+            address.Country.Code = csa.Country.ABBREVIATION;
+            address.Country.ID = csa.Country.ID.ToString();
+
+            address.Zip = o.BillingAddress.ZipCode;
+            address.Type = "Main Office";
+            address.TempAccount = null;
+            address.Default = true;
+            address.DefaultSpecified = true;
+
+            address.AddressInformationList = new List<AddressInformation>()
+            {
+                new AddressInformation()
+                {
+                    Name = "Email",
+                    Type = "Email",
+                    Default = true,
+                    DefaultSpecified = true,
+                    Data = o.BillingAddress.Email
+                }
+            };
+
+            customer.Addresses.Add(address);
+
+            return customer;
+        }
+    }
 }

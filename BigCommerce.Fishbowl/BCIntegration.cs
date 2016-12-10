@@ -73,6 +73,11 @@ namespace BigCommerce.Fishbowl
             {
                 List<BCFBOrder> ofOrders = DataMappers.MapNewOrders(cfg, orders);
 
+                Log("Creating and Validating Customer Names.");
+                ValidateCreateCustomers(ofOrders);
+                Log("Validated Customers");
+
+            
                 Log("Validating Items in Fishbowl.");
                 ValidateItems(ofOrders);
                 Log("Items Validated");
@@ -98,6 +103,49 @@ namespace BigCommerce.Fishbowl
             }
 
         }
+
+        private void ValidateCreateCustomers(List<BCFBOrder> ofOrders)
+        {
+            foreach (var x in ofOrders)
+            {
+                // Does the customer exist with the first order name?
+                bool IsCustomerExists = fb.CustomerExists(x.CustomerName);
+                if (!IsCustomerExists)
+                {
+                    // Maybe it does not, so check by email address.
+                    String CustomerNameByEmail = fb.FindCustomerNameByEmail(x.BCOrder.Customer?.Email);
+                    if (!String.IsNullOrWhiteSpace(CustomerNameByEmail))
+                    {
+                        x.CustomerName = CustomerNameByEmail;
+                    }
+                    // If it does not exist at all, try creating the customer
+                    else
+                    {
+                        Log("Creating Customer Name: " + x.CustomerName);
+                        CreateCustomer(x.CustomerName, x.BCOrder);
+                        Log("Customer Created!");
+                    }
+                }
+                // Load the Customer so we have the entire object later.
+                Log("Loading Customer Fishbowl");
+                var fbCustomer = fb.LoadCustomer(x.CustomerName);
+                if (fbCustomer == null)
+                {
+                    throw new Exception(
+                        "Cannot continue if a Customer Name is Missing, Or Cannot Be Loaded from Fishbowl. " +
+                        x.CustomerName);
+                }
+            }
+        }
+
+        private void CreateCustomer(string customerName, Order BCOrder)
+        {
+            Log("Creating Fishbowl Customer " + customerName);
+            var cas = fb.GetCountryState(BCOrder.BillingAddress.Country, BCOrder.BillingAddress.State);
+            var customer = DataMappers.MapCustomer(cfg, BCOrder, customerName, cas);
+            fb.CreateCustomer(customer);
+        }
+
         private List<String> CreateSalesOrders(List<BCFBOrder> ofOrders)
         {
             var ret = new List<String>();
