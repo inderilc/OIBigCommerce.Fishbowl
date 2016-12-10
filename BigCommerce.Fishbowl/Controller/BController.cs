@@ -35,10 +35,23 @@ namespace BigCommerce.Fishbowl.Controller
             };
 
             var client = new Client(Api_Configuration);
-            //var rs = client.OrderStatuses.Get();
-            var rso = client.Orders.Get(new FilterOrders() {StatusId=11});
+            var rs = client.OrderStatuses.Get();
+            var rso = client.Orders.Get(new FilterOrders() {});
 
-            return rso.Data;
+            List<Order> ret = new List<Order>();
+
+            foreach (var o in rso.Data)
+            {
+                o.Products = client.OrdersProducts.Get(o.Id).Data;
+                o.Customer = client.Customers.Get(o.CustomerId).Data;
+                o.ShippingAddresses = client.OrdersShippingAddresses.Get(o.Id).Data;
+                o.Shipments = client.OrdersShipments.Get(o.Id).Data;
+                ret.Add(o);
+            }
+
+
+
+            return ret;
         }
 
     }

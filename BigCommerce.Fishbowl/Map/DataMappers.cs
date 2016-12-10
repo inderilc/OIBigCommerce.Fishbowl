@@ -27,13 +27,13 @@ namespace BigCommerce.Fishbowl.Map
             salesOrder.CustomerPO = o.Id.ToString();
 
             salesOrder.Salesman = cfg.Store.OrderSettings.Salesman;
-            salesOrder.Carrier = MapCarrier(cfg, o.Shipments.ElementAt(0).ShippingMethod.ToString());
+            salesOrder.Carrier = MapCarrier(cfg, o.Shipments?.ElementAt(0).ShippingMethod.ToString()??"");
 
             salesOrder.LocationGroup = cfg.Store.OrderSettings.LocationGroup;
             salesOrder.FOB = cfg.Store.OrderSettings.ShipTerms;
             salesOrder.Status = OrderStatus;
 
-            salesOrder.CustomerContact = o.Customer.Phone+" "+o.Customer.Email.ToString();
+            salesOrder.CustomerContact = o.Customer?.Phone+" "+o.Customer?.Email.ToString();
 
 
 
@@ -119,15 +119,29 @@ namespace BigCommerce.Fishbowl.Map
             //if (item.Taxes)
             //item.TransactionPrice.Value = Math.Round(item.TransactionPrice.Value + (item.TransactionPrice.Value * .1), 2, MidpointRounding.AwayFromZero);
             //
+            String itemtype;
+            decimal Price;
+
+            if (item.IsRefunded)
+            {
+                itemtype = "20";
+                Price = item?.RefundAmount ?? item.PriceExcludingTax;
+            }
+            else
+            {
+                itemtype = "10";
+                Price = item.PriceExcludingTax;
+            }
+
             return new SalesOrderItem
             {
-                Quantity = (double)item.Quantity,
+                Quantity = item.Quantity,
                 ProductNumber = item.Sku,
-                ProductPrice = (double)item.PriceExcludingTax,
-                TotalPrice = (double)item.Quantity * (double)item.PriceExcludingTax,
+                ProductPrice = (double)Price,
+                TotalPrice = item.Quantity * (double)Price,
                 SOID = "-1",
                 ID = "-1",
-                ItemType = "10",
+                ItemType = itemtype,
                 Status = "10",
                 ProductPriceSpecified = true,
                 Taxable = true,

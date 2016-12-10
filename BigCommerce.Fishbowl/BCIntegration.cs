@@ -74,23 +74,22 @@ namespace BigCommerce.Fishbowl
                 List<BCFBOrder> ofOrders = DataMappers.MapNewOrders(cfg, orders);
 
                 Log("Validating Items in Fishbowl.");
-                //ValidateItems(ofOrders);
+                ValidateItems(ofOrders);
                 Log("Items Validated");
-
-
+                
                 Log("Creating Sales Orders Data.");
-               // ValidateOrder(ofOrders, "20");
+                ValidateOrder(ofOrders, "20");
                 Log("Finished Creating Sales Order Data.");
 
                 Log("Validate Carriers");
-                //ValidateCarriers(ofOrders);
+                ValidateCarriers(ofOrders);
                 Log("Carriers Validated");
 
                 //Log("Kit Items");
                 // ValidateKits(ofOrders);
                 // Log("Finished Kits.");
 
-                //var ret = CreateSalesOrders(ofOrders);
+                var ret = CreateSalesOrders(ofOrders);
 
                 //Log("Result: " + String.Join(Environment.NewLine, ret));
                 cfg.Store.SyncOrder.LastDownloads = DateTime.Now;
@@ -99,9 +98,84 @@ namespace BigCommerce.Fishbowl
             }
 
         }
+        private List<String> CreateSalesOrders(List<BCFBOrder> ofOrders)
+        {
+            var ret = new List<String>();
 
+            foreach (var o in ofOrders)
+            {
+                String soNum;
 
+                bool soExists = fb.CheckSoExists(o.BCOrder.Id.ToString());
 
+                if (!soExists)
+                {
+                    String msg = "";
+                    Double ordertotal;
+                    var result = fb.SaveSalesOrder(o.FbOrder, out soNum, out msg, out ordertotal);
+
+                    //xc.UpdateXC2FBDownloaded(o.XCOrder.orderid, soNum);
+
+                    try
+                    {
+                        if (result && o.FbOrder.Status.Equals("20")) // Only apply payments on Issued Orders.
+                        {
+                            DateTime dtPayment;
+                            bool dtParsed = DateTime.TryParse(o.BCOrder.DateCreated.ToString(), out dtPayment);
+
+                            var payment = fb.MakePayment(soNum, o.BCOrder.PaymentMethod.ToString(), ordertotal, cfg.Store.SyncOrder.PaymentMethodsToAccounts, (dtParsed ? dtPayment : DateTime.Now), o.FbOrder.CustomerPO.ToString()); // Use the Generated Order Total, and Payment Date
+                            ret.Add(payment);
+                        }
+                        else
+                        {
+                            ret.Add(msg);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ret.Add("Error With Payment. " + ex.Message);
+                    }
+                }
+                else
+                {
+                    ret.Add("SO Exists.");
+                }
+                Config.Save(cfg);
+            }
+
+            return ret;
+        }
+        private void ValidateItems(List<BCFBOrder> ofOrders)
+        {
+            var fbProds = fb.GetAllProducts();
+            foreach (var i in ofOrders)
+            {    
+                var orderProducts = i.BCOrder.Products;
+                List<String> prods = new List<String>();
+
+                foreach (OrdersProduct op in orderProducts)
+                {
+                    prods.Add(op.Sku);
+                }
+
+                var except = prods.Except(fbProds);
+                if (except.Any())
+                {
+                    throw new Exception($"Products Not Found on Order [{i.BCOrder.Id}] Please Create Them: " + String.Join(",", except));
+                }
+            }
+        }
+        private void ValidateOrder(List<BCFBOrder> ofOrders, String OrderStatus)
+        {
+            foreach (var o in ofOrders)
+            {
+                o.FbOrder = DataMappers.MapSalesOrder(cfg, o, OrderStatus);
+            }
+        }
+        private void ValidateCarriers(List<BCFBOrder> ofOrders)
+        {
+            // Do nothing.
+        }
 
 
 
