@@ -73,6 +73,8 @@ namespace BigCommerce.Fishbowl.Controller
             {
                 BigCommerce4Net.Domain.Product bcPro = MapFBtoBC(p);
                 var request = client.Products.Create(bcPro);
+                
+
                 if (request.RestResponse.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     ret.Add(p.Num);
@@ -86,13 +88,16 @@ namespace BigCommerce.Fishbowl.Controller
         public BigCommerce4Net.Domain.Product MapFBtoBC(FishbowlSDK.Product product)
         {
 
-            var st = client.Categories.Get(new FilterCategories()).Data;
-
+            var st = client.Products.Get(new FilterProducts());
+            
 
             List<int> catgs = new List<int>();
             catgs.Add(18);
 
             BigCommerce4Net.Domain.Product ret = new BigCommerce4Net.Domain.Product();
+
+
+            ret = st.Data.ElementAt(0);
 
             ret.DateCreated = DateTime.Now;
             ret.DateModified = DateTime.Now;
@@ -122,7 +127,31 @@ namespace BigCommerce.Fishbowl.Controller
             ret.MyobExpenseAccount = "";
             ret.MyobIncomeAccount = "";
             ret.PeachtreeGlAccount = "";
-            ret.TaxClassId = 11;
+            ret.TaxClassId = 0;
+            
+            List<ProductsImage> img = new List<ProductsImage>();
+
+            ret.Images = null;
+            ret.ResourceImages = null;
+            ret.DiscountRules = null;
+            ret.ResourceDiscountRules = null;
+            ret.ResourceRules = null;
+            ret.Rules = null;
+            ret.ConfigurableFields = null;
+            ret.ResourceConfigurableFields = null;
+            ret.CustomFields = null;
+            ret.ResourceCustomFields = null;
+            ret.ResourceVideos = null;
+            ret.Videos = null;
+            ret.Skus = null;
+            ret.ResourceSkus = null;
+            ret.OptionSets = null;
+            ret.OptionSetId = null;
+            ret.ResourceOptionSet = null;
+            ret.Options = null;
+            ret.ResourceOptions = null;
+
+
             return ret;
         }
 
