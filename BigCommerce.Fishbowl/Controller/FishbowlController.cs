@@ -10,6 +10,7 @@ using Dapper;
 using BigCommerce.Fishbowl.Configuration;
 using BigCommerce.Fishbowl.Models;
 using BigCommerce.Fishbowl.Extensions;
+using BigCommerce.Fishbowl.SQL;
 
 namespace BigCommerce.Fishbowl.Controller
 
@@ -52,6 +53,12 @@ namespace BigCommerce.Fishbowl.Controller
             return newfb;
         }
 
+        public List<Shipment> GetShipments(DateTime d)
+        {
+            var shipments = db.Query<Shipment>(FB.FB_GetShipmentsToUpdate, new { dte = d }).ToList();
+            return shipments;
+        }
+        
         public List<String> GetAllProducts()
         {
             return db.Query<String>("select num from product").ToList();
@@ -116,6 +123,13 @@ namespace BigCommerce.Fishbowl.Controller
                 return $"Payment NOT Applied. [user id:{userName}]. {rs.statusMessage}";
             }
         }
+
+        public Dictionary<String, Double> GetInventory()
+        {
+            var i = db.Query<FBInventory>(FB.FB_GetInventory).ToList();
+            return i.ToDictionary<FBInventory, String, Double>(l => l.NUM, l => l.QTY);
+        }
+
         public void CreateCustomer(Customer customer)
         {
             api.SaveCustomer(customer, true);

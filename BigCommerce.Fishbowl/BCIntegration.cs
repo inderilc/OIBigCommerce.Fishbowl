@@ -50,11 +50,11 @@ namespace BigCommerce.Fishbowl
             if (cfg.Actions.SyncOrders)
                 DownloadOrders();
 
-            //if (cfg.Actions.SyncInventory)
-                //UpdateInventory();
+            if (cfg.Actions.SyncInventory)
+                UpdateInventory();
 
-            //if (cfg.Actions.SyncShipments)
-                //UpdateShipments();
+            if (cfg.Actions.SyncShipments)
+                UpdateShipments();
 
             //if (cfg.Actions.SyncProductPrice)
                // UpdateProductPrice();
@@ -63,6 +63,84 @@ namespace BigCommerce.Fishbowl
                 //UpdateProductWeight();
 
         }
+
+        private void UpdateShipments()
+        {
+            Log("Updating Shipments.");
+            var shipments = fb.GetShipments(cfg.Store.SyncOrder.LastShipments);
+            Log("Orders: " + shipments.Count);
+            foreach (var s in shipments)
+            {
+                String orderid = s.CPO.ToString();
+                if (!String.IsNullOrEmpty(orderid))
+                {
+                    bool updated = bc.UpdateShipmentStatus(orderid, s.TRACKINGNUM, s.CARRIERNAME);
+                    if (updated)
+                    {
+                        Log($"Updated Order [{s.SONUM}] / [{s.CPO}] / [{s.ORDERNUM}] with Tracking : [{s.TRACKINGNUM}]");
+                    }
+                    else
+                    {
+                        Log($"UNABLE TO UPDATE Order [{s.SONUM}] / [{s.CPO}] / [{s.ORDERNUM}] with Tracking : [{s.TRACKINGNUM}]");
+                    }
+                }
+                else
+                {
+                    Log($"Skipping Order [{s.SONUM}] Customer PO [{s.CPO}] to mark ship, possibly not a Cart Order.");
+                }
+            }
+            cfg.Store.SyncOrder.LastShipments = DateTime.Now;
+            Config.Save(cfg);
+        }
+
+
+
+        public void UpdateInventory()
+        {
+            Log("Updating Inventory");
+
+            List<Product> BCProducts = bc.GetInventory();
+            var fbProducts = fb.GetInventory();
+            var toUpdate = new List<Product>();
+            foreach (Product kvp in BCProducts)
+            {
+                if (fbProducts.ContainsKey(kvp.Sku))
+                {
+                    var dbl = fbProducts[kvp.Sku];
+                    if (dbl != kvp.InventoryLevel)
+                    {
+                            toUpdate.Add(new Product() { Id = kvp.Id, Sku = kvp.Sku, InventoryLevel = kvp.InventoryLevel });   
+                    }
+                }
+            }
+
+            if (toUpdate.Count > 0)
+            {
+                
+                Log("Updating Inventory: " + toUpdate.Count);
+                foreach (Product i in toUpdate)
+                {
+                    var updatedGroup = bc.UpdateInventory(i);
+                    if (updatedGroup)
+                    {
+                            Log($"Sku/Variant/Productcode: [{i.Sku}] Qty: [{i.InventoryLevel}] OK");
+                     
+                    }
+                    else
+                    {
+                            Log($"Sku/Variant/Productcode: [{i.Sku}] Qty: [{i.InventoryLevel}] FAILED");
+                    }
+                }
+            }
+            else
+            {
+                Log("No Inventory to Update!");
+            }
+
+            Log("Inventory Update Finished");
+        }
+
+
         public void DownloadOrders()
         {
             Log("Downloading Orders");

@@ -17,14 +17,10 @@ namespace BigCommerce.Fishbowl.Controller
         public event LogMsg OnLog;
         public delegate void LogMsg(String msg);
         private FishbowlController fb { get; set; }
-
+        private Client client {get;set;}
         public BController(Config cfg)
         {
             this.cfg = cfg;
-        }
-
-        public List<Order> GetOrders(string v)
-        {
             var Api_Configuration = new BigCommerce4Net.Api.Configuration()
             {
                 ServiceURL = cfg.Store.StoreUrl,
@@ -33,8 +29,25 @@ namespace BigCommerce.Fishbowl.Controller
                 MaxPageLimit = 250,
                 AllowDeletions = true // Is false by default, must be true to allow deletions
             };
+            this.client = new Client(Api_Configuration);
 
-            var client = new Client(Api_Configuration);
+        }
+
+        public bool UpdateInventory(Product prod)
+        {
+                var request = client.Products.Update(prod.Id, prod);
+            return request.RestResponse.StatusCode == System.Net.HttpStatusCode.OK;   
+        }
+
+        public List<Product> GetInventory()
+        {
+            var request = client.Products.Get(new FilterOrders() { });
+            return request.Data;  
+        }
+        
+        public List<Order> GetOrders(string v)
+        {
+           
             var rs = client.OrderStatuses.Get();
             var rso = client.Orders.Get(new FilterOrders() {});
 
@@ -48,11 +61,19 @@ namespace BigCommerce.Fishbowl.Controller
                 o.Shipments = client.OrdersShipments.Get(o.Id).Data;
                 ret.Add(o);
             }
-
-
-
             return ret;
         }
 
+        public bool UpdateShipmentStatus(string orderid, string tRACKINGNUM, string cARRIERNAME)
+        {
+            var getOrderShipment = client.OrdersShipments.Get(Convert.ToInt16(orderid));
+            OrdersShipment shipment = getOrderShipment.Data.ElementAt(0);
+            shipment.TrackingNumber = tRACKINGNUM;
+            shipment.ShippingMethod = cARRIERNAME;
+
+            var request = client.OrdersShipments.Update(Convert.ToInt16(orderid), shipment.Id, shipment);
+
+            return request.RestResponse.StatusCode== System.Net.HttpStatusCode.OK;
+        }
     }
 }

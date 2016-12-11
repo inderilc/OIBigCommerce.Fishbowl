@@ -55,7 +55,7 @@ namespace BigCommerce.Fishbowl.Map
             ShippingCost = (double) o.ShippingCostExcludingTax;
     
 
-            salesOrder.Items.Add(AddShipping(MapCarrier(cfg, salesOrder.Carrier), "Shipping", Math.Round(ShippingCost, 2), salesOrder.Items.First()));
+            //salesOrder.Items.Add(AddShipping(MapCarrier(cfg, salesOrder.Carrier), "Shipping", Math.Round(ShippingCost, 2), salesOrder.Items.First()));
 
 
 
@@ -158,7 +158,7 @@ namespace BigCommerce.Fishbowl.Map
             ret.Add(new CustomField()
             {
                 Name = "Misc Credit",
-                Type = "CFT_LONG_TEXT",
+                Type = "CFT_MONEY",
                 Info = ord.BCOrder.StoreCreditAmount.ToString()
             });
 

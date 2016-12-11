@@ -59,5 +59,45 @@ namespace BigCommerce.Fishbowl.SQL {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to select * from (
+        ///
+        ///select product.num, COALESCE( IIF( SUM(QTYINVENTORYTOTALS.QTYONHAND) - SUM(QTYINVENTORYTOTALS.QTYALLOCATED) &lt; 0, 0, SUM(QTYINVENTORYTOTALS.QTYONHAND) - SUM(QTYINVENTORYTOTALS.QTYALLOCATED) ) ,0) as QTY
+        ///from PART
+        ///    join product on product.partid = part.id
+        ///    left join QTYINVENTORYTOTALS on QTYINVENTORYTOTALS.PARTID = part.id
+        ///where part.typeid = 10 
+        ///group by 1 
+        ///
+        ///union all
+        ///
+        ///select product.num, MIN ( COALESCE( (select SUM(tag.qty)-SUM(tag.QTYCOMMITTED) from tag where partid = kp.p [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string FB_GetInventory {
+            get {
+                return ResourceManager.GetString("FB_GetInventory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to select so.num as sonum,
+        ///so.CUSTOMERPO as CPO,
+        ///cvc.INFO as ordernum,
+        ///shipcarton.TRACKINGNUM as TRACKINGNUM,
+        ///c.NAME as CarrierName
+        ///from CUSTOMVARCHARLONG cvc
+        ///join customfield cf on cf.ID = cvc.customfieldid
+        ///join so on so.id=cvc.RECORDID
+        ///join ship s on s.SOID = so.ID
+        ///join shipcarton on shipcarton.shipid = s.ID
+        ///join CARRIER c on c.ID = SHIPCARTON.CARRIERID
+        ///where (cf.tableid = 1012013120 and cf.name = &apos;Ebay Record No&apos; and cvc.info !=&apos;&apos; and shipcarton.TRACKINGNUM !=&apos;&apos; and s.DATESHIPPED &gt; @dte).
+        /// </summary>
+        internal static string FB_GetShipmentsToUpdate {
+            get {
+                return ResourceManager.GetString("FB_GetShipmentsToUpdate", resourceCulture);
+            }
+        }
     }
 }
