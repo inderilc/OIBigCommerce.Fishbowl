@@ -81,22 +81,33 @@ namespace BigCommerce.Fishbowl.SQL {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to select so.num as sonum,
+        ///   Looks up a localized string similar to SELECT
+        ///ship.num SNUM,
         ///so.CUSTOMERPO as CPO,
-        ///cvc.INFO as ordernum,
-        ///shipcarton.TRACKINGNUM as TRACKINGNUM,
+        ///LIST(distinct shipcarton.TRACKINGNUM) as TRACKINGNUM
         ///c.NAME as CarrierName
-        ///from CUSTOMVARCHARLONG cvc
-        ///join customfield cf on cf.ID = cvc.customfieldid
-        ///join so on so.id=cvc.RECORDID
-        ///join ship s on s.SOID = so.ID
-        ///join shipcarton on shipcarton.shipid = s.ID
-        ///join CARRIER c on c.ID = SHIPCARTON.CARRIERID
-        ///where (cf.tableid = 1012013120 and cf.name = &apos;Ebay Record No&apos; and cvc.info !=&apos;&apos; and shipcarton.TRACKINGNUM !=&apos;&apos; and s.DATESHIPPED &gt; @dte).
+        ///from SHIP
+        ///    join so on so.id = ship.SOID
+        ///    join shipcarton on shipcarton.shipid = ship.ID
+        ///	join CARRIER c on c.ID = SHIPCARTON.CARRIERID
+        ///where ship.DATESHIPPED &gt; @dte  
+        ///group by 1,2    .
         /// </summary>
         internal static string FB_GetShipmentsToUpdate {
             get {
                 return ResourceManager.GetString("FB_GetShipmentsToUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to select
+        ///product.num as NUM
+        ///from product
+        ///left join CUSTOMINTEGER as checked on checked.customfieldid = (select id from customfield where tableid = 1012013120 and name = &apos;Create in Big Commerce&apos;) checked.recordid=so.id.
+        /// </summary>
+        internal static string GetCheckedProductNums {
+            get {
+                return ResourceManager.GetString("GetCheckedProductNums", resourceCulture);
             }
         }
     }

@@ -56,11 +56,23 @@ namespace BigCommerce.Fishbowl
             if (cfg.Actions.SyncShipments)
                 UpdateShipments();
 
-            //if (cfg.Actions.SyncProductPrice)
-               // UpdateProductPrice();
+            if (cfg.Actions.CreateCheckedProducts)
+               CreateCheckedProducts();
 
             //if (cfg.Actions.SyncProductWeight)
                 //UpdateProductWeight();
+
+        }
+
+        private void CreateCheckedProducts()
+        {
+            List<FishbowlSDK.Product> toBeCreated = fb.GetCheckedProducts();
+
+            List<String> CreatedOK = bc.CreateProducts(toBeCreated);
+            if(CreatedOK.Count>0)
+            {
+                fb.MarkCreated(CreatedOK); //should uncheck the Check Box
+            }
 
         }
 

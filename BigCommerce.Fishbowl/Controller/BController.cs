@@ -7,6 +7,7 @@ using BigCommerce4Net;
 using BigCommerce4Net.Api;
 using BigCommerce.Fishbowl.Configuration;
 using BigCommerce4Net.Domain;
+using FishbowlSDK;
 
 namespace BigCommerce.Fishbowl.Controller
 {
@@ -33,13 +34,13 @@ namespace BigCommerce.Fishbowl.Controller
 
         }
 
-        public bool UpdateInventory(Product prod)
+        public bool UpdateInventory(BigCommerce4Net.Domain.Product prod)
         {
                 var request = client.Products.Update(prod.Id, prod);
             return request.RestResponse.StatusCode == System.Net.HttpStatusCode.OK;   
         }
 
-        public List<Product> GetInventory()
+        public List<BigCommerce4Net.Domain.Product> GetInventory()
         {
             var request = client.Products.Get(new FilterOrders() { });
             return request.Data;  
@@ -63,6 +64,71 @@ namespace BigCommerce.Fishbowl.Controller
             }
             return ret;
         }
+
+        public List<String> CreateProducts(List<FishbowlSDK.Product> toBeCreated)
+        {
+            List<String> ret = new List<String>();
+
+            foreach (var p in toBeCreated)
+            {
+                BigCommerce4Net.Domain.Product bcPro = MapFBtoBC(p);
+                var request = client.Products.Create(bcPro);
+                if (request.RestResponse.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    ret.Add(p.Num);
+                }
+                ret.Add(p.Num);
+            }
+            
+            return ret;
+        }
+
+        public BigCommerce4Net.Domain.Product MapFBtoBC(FishbowlSDK.Product product)
+        {
+
+            var st = client.Categories.Get(new FilterCategories()).Data;
+
+
+            List<int> catgs = new List<int>();
+            catgs.Add(18);
+
+            BigCommerce4Net.Domain.Product ret = new BigCommerce4Net.Domain.Product();
+
+            ret.DateCreated = DateTime.Now;
+            ret.DateModified = DateTime.Now;
+            ret.EventDateStart = DateTime.Now;
+            ret.EventDateEnd = DateTime.Now.AddYears(1);
+            ret.DateLastImported = DateTime.Now;
+
+            ret.PreorderReleaseDate = DateTime.Now;
+            ret.PreorderMessage = "Now Available for Pre-Order";
+
+            ret.Description = product.Details;
+            ret.Sku = product.Num;
+            ret.Name = product.Description;
+            ret.Price = Convert.ToDecimal(product.Price);
+            ret.RelatedProducts = "None";
+            ret.Categories = catgs;
+            ret.Warranty = "None";
+            ret.PageTitle = product.Description;
+            ret.Upc = product.UPC;
+
+            ret.LayoutFile = ""; //??? need to check what this is
+            ret.OpenGraphTitle = ""; //??? need to check what this is
+            ret.OpenGraphDescription = "";//??? need to check what this is
+            ret.PriceHiddenLabel = "";
+
+            ret.MyobAssetAccount = "";
+            ret.MyobExpenseAccount = "";
+            ret.MyobIncomeAccount = "";
+            ret.PeachtreeGlAccount = "";
+            ret.TaxClassId = 11;
+            return ret;
+        }
+
+
+
+
 
         public bool UpdateShipmentStatus(string orderid, string tRACKINGNUM, string cARRIERNAME)
         {

@@ -58,7 +58,60 @@ namespace BigCommerce.Fishbowl.Controller
             var shipments = db.Query<Shipment>(FB.FB_GetShipmentsToUpdate, new { dte = d }).ToList();
             return shipments;
         }
-        
+
+        public List<Product> GetCheckedProducts()
+        {
+            List<FishbowlSDK.Product> ret = new List<FishbowlSDK.Product>();
+
+            var uploadList = GetProductNums();
+
+            foreach (var i in uploadList)
+            {
+                ProductGetRqType rq = new ProductGetRqType();
+                rq.Number = i;
+                ProductGetRsType rs = (ProductGetRsType) api.sendAnyRequest(rq);
+                if (rs.statusCode == "1000")
+                {
+                    ret.Add(rs.Product);
+                }
+                //Log("");
+            }
+
+            return ret;
+            
+        }
+
+        public void MarkCreated(List<string> createdOK)
+        {
+
+            foreach (string iNum in createdOK)
+            {
+                try
+                {
+                    using (FbTransaction t1 = db.BeginTransaction())
+                    {
+                        db.Execute(
+                            "update or insert into custominteger (id,customfieldid,recordid,info) values (GEN_ID(GENCUSTOMINTEGERID,1), (select id from customfield where tableid = 97022306 and name = 'Create in BigCommerce'), (select id from product where num = @nm), 0) MATCHING (customfieldid,recordid) ",
+                            new { nm = iNum},
+                            t1);
+                        t1.Commit();
+                    }
+
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+
+        }
+
+        private List<String> GetProductNums()
+        {
+            var nums = db.Query<String>(FB.GetCheckedProductNums);
+            return nums.ToList();
+        }
+
         public List<String> GetAllProducts()
         {
             return db.Query<String>("select num from product").ToList();

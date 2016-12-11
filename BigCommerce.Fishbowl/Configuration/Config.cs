@@ -126,7 +126,7 @@ namespace BigCommerce.Fishbowl.Configuration
         public bool SyncOrders { get; set; }
         public bool SyncInventory { get; set; }
         public bool SyncShipments { get; set; }
-        public bool SyncProductWeight { get; set; }
+        public bool CreateCheckedProducts { get; set; }
         public bool SyncProductPrice { get; set; }
     }
     public class EmailConfig
