@@ -49,12 +49,29 @@ namespace BigCommerce.Fishbowl.Controller
         public List<Order> GetOrders(string v)
         {
            
-            var rs = client.OrderStatuses.Get();
-            var rso = client.Orders.Get(new FilterOrders() {});
+            var status = client.OrderStatuses.Get();
+            Dictionary<String, bool> dict = cfg.Store.SyncOrder.DownloadOrderTypes;
+            DateTime fromDte = cfg.Store.SyncOrder.LastDownloads;
+
+            List<Order> allOrder = new List<Order>();
+            
+            foreach (var s in status.Data)
+            {
+                if (dict?[s.Name]==true)
+                {
+                    var orderRes = client.Orders.Get(new FilterOrders() {StatusId=s.Id,MinimumDateCreated=fromDte, MaximumDateCreated=DateTime.Now});
+                    if (orderRes.RestResponse.StatusCode.Equals(System.Net.HttpStatusCode.OK))
+                    {
+                        allOrder.AddRange(orderRes.Data);
+                    }
+                }
+            }
+
+            //var rso = client.Orders.Get(new FilterOrders() {});
 
             List<Order> ret = new List<Order>();
-
-            foreach (var o in rso.Data)
+            
+            foreach (var o in allOrder)
             {
                 o.Products = client.OrdersProducts.Get(o.Id).Data;
                 o.Customer = client.Customers.Get(o.CustomerId).Data;
@@ -150,7 +167,7 @@ namespace BigCommerce.Fishbowl.Controller
             ret.ResourceOptionSet = null;
             ret.Options = null;
             ret.ResourceOptions = null;
-
+            
 
             return ret;
         }

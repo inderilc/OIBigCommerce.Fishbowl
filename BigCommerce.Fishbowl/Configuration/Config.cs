@@ -91,7 +91,7 @@ namespace BigCommerce.Fishbowl.Configuration
         public Dictionary<String, String> OrderQueue { get; set; }
 
         public Dictionary<String, String> PaymentMethodsToAccounts { get; set; }
-
+        public Dictionary<String, bool> DownloadOrderTypes { get; set; }
         public DateTime LastDownloads { get; set; }
         public DateTime LastShipments { get; set; }
 
