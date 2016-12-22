@@ -48,9 +48,11 @@ namespace BigCommerce.Fishbowl.Controller
         
         public List<Order> GetOrders(string v)
         {
-           
+
+            
+
             var status = client.OrderStatuses.Get();
-            Dictionary<String, bool> dict = cfg.Store.SyncOrder.DownloadOrderTypes;
+            Dictionary<String, bool> dict = cfg.Store.DownloadOrderTypes;
             DateTime fromDte = cfg.Store.SyncOrder.LastDownloads;
 
             List<Order> allOrder = new List<Order>();

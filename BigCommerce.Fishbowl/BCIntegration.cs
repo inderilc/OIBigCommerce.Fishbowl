@@ -14,7 +14,7 @@ using BigCommerce4Net.Domain;
 
 namespace BigCommerce.Fishbowl
 {
-    class BCIntegration : IDisposable
+    public class BCIntegration : IDisposable
     {
         public event LogMsg OnLog;
         public delegate void LogMsg(String msg);
@@ -23,12 +23,6 @@ namespace BigCommerce.Fishbowl
         private FishbowlController fb { get; set; }
         private BController bc { get; set; }
 
-        public static void Main(string[] args)
-        {
-            BCIntegration obj = new BCIntegration(Config.Load());
-            obj.Run();
-        }
-       
         public BCIntegration(Config cfg)
         {
             this.cfg = cfg;
@@ -169,7 +163,7 @@ namespace BigCommerce.Fishbowl
 
             
                 Log("Validating Items in Fishbowl.");
-                ValidateItems(ofOrders);
+                //ValidateItems(ofOrders);
                 Log("Items Validated");
                 
                 Log("Creating Sales Orders Data.");
@@ -203,7 +197,7 @@ namespace BigCommerce.Fishbowl
                 if (!IsCustomerExists)
                 {
                     // Maybe it does not, so check by email address.
-                    String CustomerNameByEmail = fb.FindCustomerNameByEmail(x.BCOrder.Customer?.Email);
+                    String CustomerNameByEmail = fb.FindCustomerNameByEmail(x.BCOrder.BillingAddress?.Email);
                     if (!String.IsNullOrWhiteSpace(CustomerNameByEmail))
                     {
                         x.CustomerName = CustomerNameByEmail;
@@ -261,7 +255,7 @@ namespace BigCommerce.Fishbowl
                             DateTime dtPayment;
                             bool dtParsed = DateTime.TryParse(o.BCOrder.DateCreated.ToString(), out dtPayment);
 
-                            var payment = fb.MakePayment(soNum, o.BCOrder.PaymentMethod.ToString(), ordertotal, cfg.Store.SyncOrder.PaymentMethodsToAccounts, (dtParsed ? dtPayment : DateTime.Now), o.FbOrder.CustomerPO.ToString()); // Use the Generated Order Total, and Payment Date
+                            var payment = fb.MakePayment(soNum, o.BCOrder.PaymentMethod.ToString(), ordertotal, cfg.Store.OrderSettings.PaymentMethodsToAccounts, (dtParsed ? dtPayment : DateTime.Now), o.FbOrder.CustomerPO.ToString()); // Use the Generated Order Total, and Payment Date
                             ret.Add(payment);
                         }
                         else
