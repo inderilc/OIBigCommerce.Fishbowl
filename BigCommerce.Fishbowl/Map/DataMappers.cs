@@ -41,7 +41,7 @@ namespace BigCommerce.Fishbowl.Map
 
             //salesOrder.Items.Add(AddSubTotal(salesOrder.Items.First()));
 
-            //salesOrder.Items.Add(AddDiscountMiscSale(o.TransactionArray.Transaction.SellerDiscounts, salesOrder.Items.First()));
+            salesOrder.Items.Add(AddDiscountMiscSale(Convert.ToDouble(o.DiscountAmount), salesOrder.Items.First()));
             /*
             if (o.giftcert_discount > 0)
             {
@@ -86,7 +86,31 @@ namespace BigCommerce.Fishbowl.Map
 
 
         }
+        private static SalesOrderItem AddDiscountMiscSale(Double amt, SalesOrderItem FirstLine)
+        {
+            amt = (amt / 11) * 10; // Divide by 11, Multiply by 10
+            amt = amt * -1;
+            return new SalesOrderItem()
+            {
+                ItemType = "21", // MISC CREDIT
+                ProductNumber = "Discount",
+                Description = "WebSale Discount",
 
+                ProductPrice = amt,
+                ProductPriceSpecified = true,
+                Quantity = 1,
+                TotalPrice = amt,
+                TotalPriceSpecified = true,
+
+                QuickBooksClassName = FirstLine.QuickBooksClassName,
+                TaxID = FirstLine.TaxID,
+                TaxRate = FirstLine.TaxRate,
+                TaxCode = FirstLine.TaxCode,
+                Taxable = FirstLine.Taxable,
+                TaxRateSpecified = FirstLine.TaxRateSpecified,
+                UOMCode = "ea"
+            };
+        }
         private static SalesOrderItem AddSubTotal(SalesOrderItem FirstLine)
         {
             return new SalesOrderItem()

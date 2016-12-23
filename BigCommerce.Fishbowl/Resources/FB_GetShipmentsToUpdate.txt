@@ -1,11 +1,6 @@
-SELECT
-ship.num SNUM,
-so.CUSTOMERPO as CPO,
-LIST(distinct shipcarton.TRACKINGNUM) as TRACKINGNUM
-c.NAME as CarrierName
-from SHIP
-    join so on so.id = ship.SOID
-    join shipcarton on shipcarton.shipid = ship.ID
-	join CARRIER c on c.ID = SHIPCARTON.CARRIERID
-where ship.DATESHIPPED > @dte  
-group by 1,2    
+select so.CUSTOMERPO as CPO, SHIPCARTON.TRACKINGNUM as TrackingNum, carrier.NAME as CarrierName
+from so
+join ship on ship.SOID=so.ID
+join shipcarton on shipcarton.shipid = ship.id
+join carrier on carrier.ID=SHIPCARTON.CARRIERID
+where (SHIPCARTON.TRACKINGNUM !='' and (ship.DATESHIPPED >@dte))  
